@@ -5,12 +5,13 @@
 # Home page
 GET     /                           controllers.Application.index
 
+# Background API
+GET     /api/kintai                 controllers.KintaiManagement.kintai
+
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 # Authorication
-GET     /callback                   org.pac4j.play.CallbackController.callback()
-POST    /callback                   org.pac4j.play.CallbackController.callback()
-GET     /casProxyCallback           org.pac4j.play.CallbackController.callback()
-POST    /casProxyCallback           org.pac4j.play.CallbackController.callback()
-GET     /logout                     org.pac4j.play.CallbackController.logoutAndRedirect()
+GET   /callback               org.pac4j.play.CallbackController.callback()
+POST  /callback               org.pac4j.play.CallbackController.callback()
+GET   /logout                 org.pac4j.play.CallbackController.logoutAndRedirect()

@@ -4,6 +4,7 @@ import play.api.Configuration
 import com.typesafe.config.ConfigFactory
 import java.io.File
 import models.twiter.TwitterAuthConfig.ConfigurationError
+import twitter4j.TwitterFactory
 
 trait TwitterAuthConfig {
 
@@ -27,7 +28,14 @@ trait TwitterAuthConfig {
   }
 }
 
-object TwitterAuthConfig {
+object TwitterAuthConfig extends TwitterAuthConfig {
   class ConfigurationError(m: String) extends RuntimeException(m)
+
+  lazy val twitter = {
+    val tw = TwitterFactory.getSingleton
+    tw.setOAuthConsumer(consumer.key, consumer.secret)
+    tw
+  }
+
 }
 case class TwitterConsumer(key: String, secret: String)
