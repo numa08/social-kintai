@@ -1,0 +1,3 @@
+[submodule "public/stylesheets/bootstrap-social"]
+	path = public/stylesheets/bootstrap-social
+	url = git@github.com:lipis/bootstrap-social.git
