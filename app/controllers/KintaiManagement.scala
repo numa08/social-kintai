@@ -19,36 +19,41 @@ import models.kintai.GetTaisya
 import models.kintai.GetSyussya
 import models.kintai.Kintai
 import akka.util.Timeout
+import scala.concurrent.Future
 
 object KintaiManagement extends ScalaController with TwitterAuthConfig {
 
   def kintai = Action.async { request =>
-    val tp = getUserProfile(request).asInstanceOf[TwitterProfile]
-    val ac = new AccessToken(tp.getAccessToken, tp.getAccessSecret)
-    val twitter = TwitterAuthConfig.twitter
+    val newSession = getOrCreateSessionId(request)
+    Option(getUserProfile(request)).fold {
+      Future(Ok(getRedirectAction(request, newSession, "TwitterClient", "/").getLocation))
+    } { p =>
+      val tp = p.asInstanceOf[TwitterProfile]
+      val ac = new AccessToken(tp.getAccessToken, tp.getAccessSecret)
+      val twitter = TwitterAuthConfig.twitter
 
-    twitter.setOAuthAccessToken(ac)
-    val actor = Akka.system.actorOf(Props(new KintaiActor(twitter)))
-    implicit val timeout = Timeout(60 seconds)
-    val syussya = actor ? GetSyussya()
-    val taisya = actor ? GetTaisya()
+      twitter.setOAuthAccessToken(ac)
+      val actor = Akka.system.actorOf(Props(new KintaiActor(twitter)))
+      implicit val timeout = Timeout(60 seconds)
+      val syussya = actor ? GetSyussya()
+      val taisya = actor ? GetTaisya()
 
-    val kintai = for {
-      sList <- syussya.mapTo[List[Date]]
-      tList <- taisya.mapTo[List[Date]]
-    } yield {
-      GetKintai(sList, tList)
+      val kintai = for {
+        sList <- syussya.mapTo[List[Date]]
+        tList <- taisya.mapTo[List[Date]]
+      } yield {
+        GetKintai(sList, tList)
+      }
+      val res = kintai.flatMap(actor ? _)
+
+      val json = for {
+        kList <- res.mapTo[List[Kintai]]
+      } yield {
+        val json = kList.map(_.toJson)
+        JsArray(json)
+      }
+
+      json.map(Ok(_))
     }
-    val res = kintai.flatMap(actor ? _)
-
-    val json = for {
-      kList <- res.mapTo[List[Kintai]]
-    } yield {
-      val json = kList.map(_.toJson)
-      JsArray(json)
-    }
-
-    json.map(Ok(_))
   }
-
 }
