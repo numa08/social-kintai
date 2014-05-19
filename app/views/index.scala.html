@@ -15,18 +15,17 @@
     <div class="container">
         <div class="navbar-header"><a class="navbar-brand" href="/">Social Kintai</a></div>
         <div class="navbar-collapse cooapse">
-            <div class="navbar-form navbar-right">
                 @navbar match {
-                    case models.UnAuthorizedNavigationBar(url) => {<div class="navbar-form navbar-right">
-                                                                        <a class="btn btn-social btn-github" href="@url"><i class="fa fa-github"></i>Login</a>
-                                                                   </div>}
+                    case models.UnAuthorizedNavigationBar(url) => {<ul class="nav navbar-nav navbar-right">
+                                                                    <li><a class="btn btn-block btn-social-icon btn-twitter" href="@url"><i class="fa fa-twitter">login</i></a></li>
+                                                                   </ul>}
                     case models.AuthorizedNavigationBar(name, avatar) => {<ul class="nav navbar-nav navbar-right">
                                                                          <li><a href="#" id="avatar"><img src="@avatar" alt="" height="30"/></a></li>
                                                                          <li><a href="#">@name</a></li>
                                                                        </ul>}
                 }
 
-            </div>
+
         </div>
     </div>
 </nav>
