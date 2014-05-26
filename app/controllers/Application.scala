@@ -11,7 +11,7 @@ object Application extends ScalaController with TwitterAuthConfig {
   def index = Action { request =>
     val newSession = getOrCreateSessionId(request)
     val content = Option(getUserProfile(request)).fold[NavigationBar] {
-      val url = getRedirectAction(request, newSession, "TwitterClient", "/").getLocation
+      val url = getRedirectAction(request, newSession, "TwitterClient", "/?1").getLocation
       UnAuthorizedNavigationBar(url)
     } { p =>
       val tp = p.asInstanceOf[TwitterProfile]

@@ -26,7 +26,7 @@ object KintaiManagement extends ScalaController with TwitterAuthConfig {
   def kintai = Action.async { request =>
     val newSession = getOrCreateSessionId(request)
     Option(getUserProfile(request)).fold {
-      Future(Ok(getRedirectAction(request, newSession, "TwitterClient", "/").getLocation))
+      Future(Forbidden(getRedirectAction(request, newSession, "TwitterClient", "/?1").getLocation))
     } { p =>
       val tp = p.asInstanceOf[TwitterProfile]
       val ac = new AccessToken(tp.getAccessToken, tp.getAccessSecret)

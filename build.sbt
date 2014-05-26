@@ -29,7 +29,7 @@ libraryDependencies ++= Seq(
   "org.webjars" % "bootstrap" % "3.1.1",
   "org.webjars" % "jquery" % "2.1.0-2",
   "org.webjars" % "font-awesome" % "4.0.3",
-  "org.pac4j"   % "play-pac4j_scala" % "1.2.0",
+  "org.pac4j"   % "play-pac4j_scala" % "1.2.1-SNAPSHOT",
   "org.pac4j" % "pac4j-oauth" % "1.5.1"
 )
 

@@ -11,7 +11,7 @@ import models.twiter.TwitterAuthConfig
 object Global extends GlobalSettings with TwitterAuthConfig {
 
   override def onError(request: RequestHeader, ex: Throwable): Future[SimpleResult] = {
-    Future.successful(Results.InternalServerError)
+    Future.successful(Results.InternalServerError(ex.getMessage))
   }
 
   override def onStart(app: play.api.Application): Unit = {

@@ -46,5 +46,26 @@
         </div>
     </div>
 </div>
+<div class="row">
+    <div class="col-md-4 col-mld-offset-4" id="content"></div>
+</div>
 </body>
+<script type="text/javascript">
+    $.ajax({
+        url : "api/kintai",
+        statusCode : {
+            403 : function(req) {
+                $("<a/>", {
+                    "class" : "btn btn-primary btn-lg active",
+                    "href" : req.responseText,
+                    "role" : "button",
+                    "text" : "Login"
+                }).appendTo("#content")
+                console.log(req.responseText)
+            }
+        }
+    }).done(function(json){
+        console.log("ok");
+    });
+</script>
 </html>
