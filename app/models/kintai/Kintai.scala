@@ -4,10 +4,10 @@ import java.util.Date
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import akka.actor.Actor
-import twitter4j.{ Query, Twitter, Status }
+import twitter4j.{ Paging, Twitter, Status }
 import scala.collection.JavaConversions._
-import java.text.SimpleDateFormat
 import scala.concurrent.duration._
+import scala.annotation.tailrec
 
 case class Kintai(syussya: Date, taisya: Date) {
 
@@ -21,53 +21,53 @@ case class Kintai(syussya: Date, taisya: Date) {
   }
 }
 
-class KintaiActor(tw: Twitter) extends Actor with SyussyaFilter with TaisyaFilter with KintaiCount {
+class KintaiActor(tw: Twitter) extends Actor with KintaiFilter with KintaiCollection {
 
   def twitter = tw
 
   def receive = {
-    case GetSyussya()      => sender ! syussyaDates
-    case GetTaisya()       => sender ! taisyaDates
-    case GetKintai(sl, tl) => sender ! kintai(sl, tl)
+    case GetKintai()          => sender ! kintais
+    case CollectionKintai(st) => sender ! collection(st)
   }
 }
 
 trait TwitterFilter {
   def twitter: Twitter
 
-  def filter(query: Query)(filter: Status => Boolean): List[Status] = {
-    Option {
-      twitter.search(query)
-        .getTweets
-    }.map(_.filter(filter).toList).getOrElse(Nil)
-  }
-}
-
-trait KintaiQuery {
-
-  def query(query: String): Query = {
-    val q = new Query(query)
-    val df = new SimpleDateFormat("yyyy-MM-dd")
-    q.setUntil(df.format(new Date(System.currentTimeMillis())))
-    q.setSince {
-      df.format {
-        new Date(System.currentTimeMillis() - (30 days).toMillis)
+  def tweets(isEnd: Status => Boolean): List[Status] = {
+    @tailrec
+    def _tweets(ts: List[Status], p: Int, isEnd: Status => Boolean): List[Status] = {
+      val nts = ts ++ twitter.getUserTimeline(new Paging(p, 200)).toList
+      nts.last match {
+        case s if isEnd(s) => nts
+        case _             => _tweets(nts, p + 1, isEnd)
       }
     }
-    q
+
+    _tweets(List(), 1, isEnd)
   }
 }
 
-trait SyussyaFilter extends TwitterFilter with KintaiQuery {
-  val syussyaDates: List[Date] = filter(query("ｼｭｯｼｬ"))(_.getText == "ｼｭｯｼｬ").map(_.getCreatedAt)
+trait KintaiFilter extends TwitterFilter {
+
+  val kintais: List[Either[Syussya, Taisya]] = tweets { s =>
+    val oneMonthAgo = new Date(System.currentTimeMillis() - (30 days).toMillis).getTime
+    s.getCreatedAt.getTime < oneMonthAgo
+  }.filterNot(_.isRetweet)
+    .collect {
+      case s if s.getText == "ｼｭｯｼｬ" => Left(Syussya(s.getCreatedAt))
+      case s if s.getText == "ﾀｲｼｬ"  => Right(Taisya(s.getCreatedAt))
+    }
+
 }
 
-trait TaisyaFilter extends TwitterFilter with KintaiQuery {
-  val taisyaDates: List[Date] = filter(query("ﾀｲｼｬ"))(_.getText == "ﾀｲｼｬ").map(_.getCreatedAt)
-}
-
-trait KintaiCount {
-  def kintai(syussya: List[Date], taisya: List[Date]): List[Kintai] = {
-    syussya.zip(taisya).map(st => Kintai(st._1, st._2))
+trait KintaiCollection {
+  def collection(kintais: List[Either[Syussya, Taisya]]): List[Kintai] = {
+    val syussyas = kintais.collect { case Left(s) => s }
+    val taisyas = kintais.collect { case Right(t) => t }
+    syussyas.zip(taisyas).map(st => Kintai(st._1.d, st._2.d))
   }
 }
+
+case class Syussya(d: Date)
+case class Taisya(d: Date)

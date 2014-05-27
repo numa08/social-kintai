@@ -11,12 +11,9 @@ import akka.actor.Props
 import akka.pattern.ask
 import scala.concurrent.duration._
 import models.kintai._
-import java.util.Date
 import play.api.libs.json.JsArray
 import play.api.libs.concurrent.Execution.Implicits._
-import models.kintai.GetKintai
-import models.kintai.GetTaisya
-import models.kintai.GetSyussya
+import models.kintai.CollectionKintai
 import models.kintai.Kintai
 import akka.util.Timeout
 import scala.concurrent.Future
@@ -34,17 +31,15 @@ object KintaiManagement extends ScalaController with TwitterAuthConfig {
 
       twitter.setOAuthAccessToken(ac)
       val actor = Akka.system.actorOf(Props(new KintaiActor(twitter)))
-      implicit val timeout = Timeout(60 seconds)
-      val syussya = actor ? GetSyussya()
-      val taisya = actor ? GetTaisya()
+      implicit val timeout = Timeout(180 seconds)
+      val kintai = actor ? GetKintai()
 
-      val kintai = for {
-        sList <- syussya.mapTo[List[Date]]
-        tList <- taisya.mapTo[List[Date]]
+      val collection = for {
+        st <- kintai.mapTo[List[Either[Syussya, Taisya]]]
       } yield {
-        GetKintai(sList, tList)
+        CollectionKintai(st)
       }
-      val res = kintai.flatMap(actor ? _)
+      val res = collection.flatMap(actor ? _)
 
       val json = for {
         kList <- res.mapTo[List[Kintai]]
